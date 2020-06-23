@@ -133,6 +133,7 @@ def createMesh(poly, quality=32, area=0.0, smooth=None, switches=None,
                                           verbose=verbose, **kwargs)
 
         try:
+            os.close(_)
             os.remove(namePLC)
         except BaseException as e:
             print(e)
