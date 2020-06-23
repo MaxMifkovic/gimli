@@ -126,9 +126,10 @@ def createMesh(poly, quality=32, area=0.0, smooth=None, switches=None,
             quality = 1.2
 
         tmp = pg.optImport('tempfile')
-        _, namePLC = tmp.mkstemp(suffix='.poly')
-
+        fd, namePLC = tmp.mkstemp(suffix='.poly')
         pg.meshtools.exportPLC(poly, namePLC)
+        os.close(fd) ## needed for win32 to free the file for closing
+
         mesh = pg.meshtools.syscallTetgen(namePLC, quality, area,
                                           verbose=verbose, **kwargs)
 
@@ -138,7 +139,6 @@ def createMesh(poly, quality=32, area=0.0, smooth=None, switches=None,
         except BaseException as e:
             print(e)
             print("can't remove:", namePLC)
-
 
         return mesh
 

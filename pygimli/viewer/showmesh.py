@@ -15,7 +15,7 @@ from .. core.logger import renameKwarg
 try:
     import pygimli as pg
     from .mpl import drawMesh, drawModel, drawField
-    from .mpl import drawMatrix
+    from .showmatrix import showMatrix
     from .mpl import drawSensors
     from .mpl import createColorBar, updateColorBar
     from .mpl import drawStreams, addCoverageAlpha
@@ -69,18 +69,40 @@ def show(obj=None, data=None, **kwargs):
     --------
     showMesh
     """
-    if "axes" in kwargs:
+    if "axes" in kwargs: # remove me in 1.2 #20200515
         print("Deprecation Warning: Please use keyword `ax` instead of `axes`")
         kwargs['ax'] = kwargs.pop('axes', None)
 
+    ### Empty call just to create a axes
+    if obj is None and not 'mesh' in kwargs.keys():
+        ax = kwargs.pop('ax', None)
+
+        if ax is None:
+            ax = plt.subplots()[1]
+        return ax, None
+
+    ### try to interprete obj containes a mesh
+    if hasattr(obj, 'mesh'):
+        return pg.show(obj.mesh, obj, **kwargs)
+
+    ### try to interprete obj as ERT Data
     if isinstance(obj, pg.DataContainerERT):
         from pygimli.physics.ert import showERTData
         return showERTData(obj, vals=kwargs.pop('vals', data), **kwargs)
 
-    if isinstance(obj, pg.core.MatrixBase):
-        ax, _ = pg.show()
-        return drawMatrix(ax, obj, **kwargs)
+    ### try to interprete obj as matrices
+    if isinstance(obj, pg.core.MatrixBase) or \
+        (isinstance(obj, np.ndarray) and obj.ndim == 2):
+        return showMatrix(obj, **kwargs)
 
+    try:
+        from scipy.sparse import spmatrix
+        if isinstance(obj, spmatrix):
+            return showMatrix(obj, **kwargs)
+    except ImportError:
+        pass
+
+    ### try to interprete obj as mesh or list of meshes
     mesh = kwargs.pop('mesh', obj)
 
     if isinstance(mesh, list):
@@ -125,12 +147,8 @@ def show(obj=None, data=None, **kwargs):
         else:
             pg.error("ERROR: Mesh not valid.", mesh)
 
-    ax = kwargs.pop('ax', None)
-
-    if ax is None:
-        ax = plt.subplots()[1]
-
-    return ax, None
+    pg.error("Can't interprete obj: {0} to show.".format(obj))
+    return None, None
 
 
 def showMesh(mesh, data=None, hold=False, block=False, colorBar=None,
@@ -230,7 +248,7 @@ def showMesh(mesh, data=None, hold=False, block=False, colorBar=None,
     -------
     ax : matplotlib.axes
 
-    colobar : matplotlib.colorbar
+    cBar : matplotlib.colorbar
     """
     renameKwarg('cmap', 'cMap', kwargs)
 
@@ -238,10 +256,15 @@ def showMesh(mesh, data=None, hold=False, block=False, colorBar=None,
     nCols = None
     cBarOrientation = kwargs.pop('orientation', 'horizontal')
 
-    fitViewDefault = False
     if ax is None:
-        fitViewDefault = True
         ax = plt.subplots()[1]
+
+    # adjust limits only when axis is empty
+    if (ax.lines or ax.collections or ax.patches):
+        fitViewDefault = False
+    else:
+        fitViewDefault = True
+
 
     # plt.subplots() resets locale setting to system default .. this went
     # horrible wrong for german 'decimal_point': ','
@@ -408,7 +431,7 @@ def showMesh(mesh, data=None, hold=False, block=False, colorBar=None,
             addCoverageAlpha(gci, coverage,
                              dropThreshold=kwargs.pop('dropThreshold', 0.4))
         else:
-            raise BaseException('toImplement')
+            pg.error('show, coverage wrong length, toImplement')
             # addCoverageAlpha(gci, pg.core.cellDataToPointData(mesh, coverage))
 
     if not hold or block is not False and plt.get_backend().lower() != "agg":

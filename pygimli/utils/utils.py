@@ -202,7 +202,7 @@ def prettyFloat(value, roundValue=False):
 
     if string.endswith(".0"):
         return string.replace(".0", "")
-    elif '.' in string and string.endswith("0"):
+    elif '.' in string and string.endswith(".0"):
         return string[0:len(string)-1]
     else:
         return string
@@ -496,17 +496,10 @@ def randn(n, seed=None):
     """
     if seed is not None:
         np.random.seed(seed)
+
+    if isinstance(n, tuple):
+        return np.random.randn(n[0], n[1])
     return np.random.randn(n)
-
-
-def randN(n, minVal=0.0, maxVal=1.0):
-    """Create RVector of length n with normally distributed random numbers."""
-    pg.deprecated('not needed') # 20200515
-    r = pg.Vector(n)
-    pg.math.randn(r)
-    r *= (maxVal - minVal)
-    r += minVal
-    return r
 
 
 def rand(n, minVal=0.0, maxVal=1.0, seed=None):

@@ -316,7 +316,7 @@ class Modelling(pg.core.ModellingBase):
             Should be implemented method depending.
         """
         raise Exception("Needed?? Implement me in derived classes")
-        #data = data * (pg.math.randn(len(data)) * errPerc / 100. + 1.)
+        #data = data * (pg.randn(len(data)) * errPerc / 100. + 1.)
         #return data
 
     def drawModel(self, ax, model, **kwargs):
@@ -580,17 +580,17 @@ class MeshModelling(Modelling):
             pg.viewer.mpl.setMappableData(cBar.mappable, mod, **kwargs)
         else:
             diam = kwargs.pop('diam', None)
+
             ax, cBar = pg.show(mesh=self.paraDomain,
                                data=mod,
                                label=kwargs.pop('label', 'Model parameter'),
                                logScale=kwargs.pop('logScale', False),
                                ax=ax,
-                               **kwargs)
-
+                               **kwargs
+                               )
             if diam is not None:
                 pg.viewer.mpl.drawSensors(ax, self.data.sensors(), diam=diam,
                                          edgecolor='black', facecolor='white')
-
         return ax, cBar
 
 

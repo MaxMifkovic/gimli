@@ -116,15 +116,27 @@ void SparseMapMatrix< double, Index >::copy_(const SparseMatrix< double > & S){
         }
     }
 }
-
 template <> void SparseMapMatrix< double, Index >::
     add(const ElementMatrix < double > & A, double scale){
     double tol = 1e-15;
     for (Index i = 0, imax = A.rows(); i < imax; i++){
         for (Index j = 0, jmax = A.mat().cols(); j < jmax; j++){
-            double v = A.getVal(i, j);
+            double v = A.getVal(i, j) * scale;
             if (::fabs(v) > tol){
-                this->addVal(A.rowIDs()[i], A.colIDs()[j], v * scale);
+                // __MS(A.rowIDs()[i] << " " << A.colIDs()[j] << " " << v * scale)
+                this->addVal(A.rowIDs()[i], A.colIDs()[j], v);
+            }
+        }
+    }
+}
+template <> void SparseMapMatrix< double, Index >::
+    add(const ElementMatrix < double > & A, const Vector < double > & scale){
+    double tol = 1e-15;
+    for (Index i = 0, imax = A.rows(); i < imax; i++){
+        for (Index j = 0, jmax = A.mat().cols(); j < jmax; j++){
+            double v = A.getVal(i, j) * scale[i];
+            if (::fabs(v) > tol){
+                this->addVal(A.rowIDs()[i], A.colIDs()[j], v);
             }
         }
     }
@@ -157,6 +169,15 @@ template <> void SparseMapMatrix< Complex, Index >::
         for (Index j = 0, jmax = A.mat().cols(); j < jmax; j++){
             double v = A.getVal(i, j);
             (*this)[A.rowIDs()[i]][A.colIDs()[j]] += v * scale;
+        }
+    }
+}
+template <> void SparseMapMatrix< Complex, Index >::
+    add(const ElementMatrix < double > & A, const Vector < Complex > & scale){
+    for (Index i = 0, imax = A.rows(); i < imax; i++){
+        for (Index j = 0, jmax = A.mat().cols(); j < jmax; j++){
+            double v = A.getVal(i, j);
+            (*this)[A.rowIDs()[i]][A.colIDs()[j]] += v * scale[i];
         }
     }
 }
